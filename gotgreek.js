@@ -43,6 +43,8 @@ var gotGreek = function(){
 								if (Math.abs(event.clientX-bufferX)<5 && 
 									Math.abs(event.clientY-bufferY)<5){
 										translateListener(event);
+										bufferX=0;
+										bufferY=0;
 								}
 							},500);
 			}
