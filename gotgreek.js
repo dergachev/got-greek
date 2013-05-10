@@ -322,6 +322,7 @@ var gotGreek = function(){
 			var translation = response.data.translations[0].translatedText;
 			cache[currentTranslate]=translation;
 			overlayTranslation(translation);
+			currentTxt='';
 		}
 	};
 }();
