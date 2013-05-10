@@ -1,4 +1,4 @@
-gotgreek bookmarklet
+AJAX translation bookmarklet
 =========
 Upon activation, __GotGreek__ monitors user behavior and provides word or phrase translations (powered by <a href="https://developers.google.com/translate/">Google Translate</a>) in the following fashion:
 
