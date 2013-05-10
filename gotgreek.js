@@ -77,7 +77,6 @@ var gotGreek = function(){
 		// if there is no selection try to wrap a word around click point
 		if (window.getSelection().isCollapsed){
 			text = extractWordAt(event.target, currentX, currentY);
-			console.log('found text: '+text+'*');
 		}
 		// if there is a selection, push it to its bounding limits
 		else{
@@ -85,7 +84,6 @@ var gotGreek = function(){
 		}
 		// translate the word
 		if (/\S/.test(text) && /\D/.test(text)){
-			console.log('translating');
 			translate(text,fromLang,toLang);
 		}
 	};
@@ -93,7 +91,6 @@ var gotGreek = function(){
 	var translate = function(text,from,to){
 		currentTranslate = text;
 		if (cache[text]){
-			console.log('found in cache: '+text);
 			return overlayTranslation(cache[text]);
 		}
 		var url;
@@ -130,7 +127,6 @@ var gotGreek = function(){
 	// any space character, all punctuation marks except for single quote and dash.
 	// if no string is found an empty string is returned
 	var extractWordAt = function(node,x,y){
-		console.log('function called at '+x+','+y+' node is: ');console.log(node);
 		var range,
 			currentText = node.nodeValue,
 			start, end, counter, tmp, len;
