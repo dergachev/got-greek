@@ -310,9 +310,9 @@ var gotGreek = function(){
 		//this function is the only function that is called from the bookmarklet
 		boot : function(){
 			if(!running){
-				init('fr','en', 'http://localhost/gotgreek/google.png',
-								'http://localhost/gotgreek/close.png',
-								'http://localhost/gotgreek/to.png',
+				init('fr','en',	'https://raw.github.com/amirio/got-greek/master/google.png',
+								'https://raw.github.com/amirio/got-greek/master/close.png',
+								'https://raw.github.com/amirio/got-greek/master/arrow.png',
 								'AIzaSyAICISSmAHfsclKJ4eu5UtbhhtWMLUqxcY',
 								'https://www.googleapis.com/language/translate/v2');
 			}
