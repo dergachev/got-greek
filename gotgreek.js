@@ -2,12 +2,18 @@ var gotGreek = function(){
 	var languages = {
 			'en':'English',
 			'fr':'Français',
+			'de':'Deutsch',
+			'he':'עברית',
+			'hi':'हिन्दी, हिंदी',
+			'el':'ελληνικά',
+			'pt':'Português',
+			'tr':'Türkçe',
 			'ar':'العربية',
 			'fa':'فارسی',
 			'ru':'русский язык',
 			'it':'Italiano',
 			'es':'Español'},
-		running=false,
+		running=false,initialized=false,
 		boundaryPattern=/[\s:!.,\"\(\)«»%$]/,
 		nonBoundaryPattern=/[^\s:!.,\"\(\)«»%$]/,
 		cache, menu, currentTranslate,
@@ -64,9 +70,9 @@ var gotGreek = function(){
 		arrowImageURL  = arrow;
 		googleAPIKey   = apiKey;
 		googleTranslateURL   = translateUrl;
-
 		menu = createMenu();
 		document.body.appendChild(menu);
+		initialized=  true;
 	};
 
 	// all translation operations start here
@@ -312,7 +318,7 @@ var gotGreek = function(){
 	return{
 		//this function is the only function that is called from the bookmarklet
 		boot : function(){
-			if(!running){
+			if(!running && !initialized){
 				init('fr','en',	'https://raw.github.com/amirio/got-greek/master/google.png',
 								'https://raw.github.com/amirio/got-greek/master/close.png',
 								'https://raw.github.com/amirio/got-greek/master/arrow.png',
