@@ -42,7 +42,12 @@ var gotGreek = function(){
 							//wait half a second, if the mouse pointer is still 'close enough', start the operation
 								if (Math.abs(event.clientX-bufferX)<5 && 
 									Math.abs(event.clientY-bufferY)<5){
-										translateListener(event);
+										currentX = event.clientX;
+										currentY = event.clientY;
+										var text= extractWordAt(event.target, currentX, currentY);
+										if (/\S/.test(text) && /\D/.test(text)){
+											translate(text,fromLang,toLang);
+										}
 										bufferX=0;
 										bufferY=0;
 								}
@@ -320,9 +325,10 @@ var gotGreek = function(){
 		//the jsonp callback function
 		jsonCallback : function(response){
 			var translation = response.data.translations[0].translatedText;
+			//TODO what if for some reason currentTranslate is changed by another request to translate
+			// before jsonCallback is called
 			cache[currentTranslate]=translation;
 			overlayTranslation(translation);
-			currentTxt='';
 		}
 	};
 }();
