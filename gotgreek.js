@@ -1,121 +1,92 @@
 var gotGreek = function(){
-	var languages = {
-			'en':'English',
-			'fr':'Français',
-			'de':'Deutsch',
-			'he':'עברית',
-			'hi':'हिन्दी, हिंदी',
-			'el':'ελληνικά',
-			'pt':'Português',
-			'tr':'Türkçe',
-			'ar':'العربية',
-			'fa':'فارسی',
-			'ru':'русский язык',
-			'it':'Italiano',
-			'es':'Español'},
-		running=false,initialized=false,
+	var	loaded=false,running=false,initialized=false,
 		boundaryPattern=/[\s:!.,\"\(\)«»%$]/,
 		nonBoundaryPattern=/[^\s:!.,\"\(\)«»%$]/,
-		cache, menu, currentTranslate,
-		currentX, currentY, bufferX, bufferY,
-		fromLang, toLang,
-		attributionURL, closeIconURL, arrowImageURL, googleAPIKey, googleTranslateURL;
+		cache, currentTranslate,
+		currentX, currentY, bufferX, bufferY, cssApplier, currentRange,
+		fromLang='fr', toLang='en',
+		attributionURL, closeIconURL, arrowImageURL, googleAPIKey, translateURL;
 	
 	//**************
 	//main functions
 	//**************
-
-	// this is the main internal function (only invoked when 'Go!' button is pressed), life starts here.
-	var go = function(from,to){
-		running=true;
-		toLang = to;
-		fromLang=from;
-		cache={};
-		
-		// set selected values of menu selects
-		document.getElementById('gotGreek-to').value=toLang;
-		document.getElementById('gotGreek-from').value=fromLang;
-		menu.className='hidden';
-
-		document.body.addEventListener('mouseup', translateListener);
-		
-		// set a different listener for mousemove (for words in <a> elements)
-		document.body.addEventListener('mousemove', function(event){
-			bufferX = event.clientX;
-			bufferY = event.clientY;
-			if(event.target.nodeType=== Node.ELEMENT_NODE && event.target.tagName.toLowerCase()==='a'){
-				setTimeout(	function(){
-							//wait half a second, if the mouse pointer is still 'close enough', start the operation
-								if (Math.abs(event.clientX-bufferX)<5 && 
-									Math.abs(event.clientY-bufferY)<5){
-										currentX = event.clientX;
-										currentY = event.clientY;
-										var text= extractWordAt(event.target, currentX, currentY);
-										if (/\S/.test(text) && /\D/.test(text)){
-											translate(text,fromLang,toLang);
-										}
-										bufferX=0;
-										bufferY=0;
-								}
-							},500);
-			}
-		});
+	var load = function(){
+		console.log('loading GotGreek...');
+		//have to do without jquery
+		var m = document.createElement('div');
+		m.setAttribute('id','gotGreek-menu');
+		m.appendChild(document.createTextNode('loading...'));
+		document.body.appendChild(m);
+		loaded=true;
+		document.getElementById('gotGreek-menu').className='hidden';
+		gotGreek.boot();
 	};
 	// this function is called only once by gotGreek.boot
-	var init = function(from,to,google,close,arrow,apiKey,translateUrl){
-		fromLang=from;
-		toLang=to;
-		attributionURL = google;
-		closeIconURL   = close;  
-		arrowImageURL  = arrow;
-		googleAPIKey   = apiKey;
-		googleTranslateURL   = translateUrl;
-		menu = createMenu();
-		document.body.appendChild(menu);
-		initialized=  true;
+	var init = function(from,to,google,close,arrow,apiKey,url){
+		//TODO what if the user is not connected to Internet
+		// or for any other reason one of these resources was unavailable?
+		console.log('initializing GotGreek...');
+		fromLang		= from;
+		toLang			= to;
+		attributionURL	= google;
+		closeIconURL	= close;  
+		arrowImageURL	= arrow;
+		googleAPIKey	= apiKey;
+		translateURL    = url;
+		cache={};
+		initialized = true;
+		rangy.init();
+		currentRange= null;
+		cssApplier = rangy.createCssClassApplier('gotGreek-selected',{normalize:true});
+		console.log('GotGreek initialized.');
+		gotGreek.boot();
 	};
-
 	// all translation operations start here
 	var translateListener= function(event){
 		if(!running){return;}
-		if(menu.className===''){
-			menu.className='hidden';
-			return;
-		}
-		var text;
+		var text,translation;
 		currentX=event.clientX;
 		currentY=event.clientY;
+		console.log(rangy.getSelection().isCollapsed);
 		// if there is no selection try to wrap a word around click point
-		if (window.getSelection().isCollapsed){
-			text = extractWordAt(event.target, currentX, currentY);
+		if (rangy.getSelection().isCollapsed){
+			currentRange = extractWordAt(event.target, currentX, currentY);
 		}
 		// if there is a selection, push it to its bounding limits
 		else{
-			text = pushToLimits(window.getSelection().getRangeAt(0));
+			currentRange = rangy.getSelection().getRangeAt(0);
+			pushToLimits(currentRange);
 		}
+		if(currentRange===null){
+			rangy.getSelection().removeAllRanges();
+			return;
+		}
+		text = currentRange.toString();
 		// translate the word
 		if (/\S/.test(text) && /\D/.test(text)){
-			translate(text,fromLang,toLang);
+			cssApplier.applyToRange(currentRange);
+			if (cache[text]){
+				return overlayTranslation(cache[text]);
+			}
+			translation = translate(text);
 		}
 	};
-	
-	var translate = function(text,from,to){
+	var translate = function(text){
 		currentTranslate = text;
-		if (cache[text]){
-			return overlayTranslation(cache[text]);
-		}
-		var url;
 		if(text.trim()!== ''){
-			url = googleTranslateURL+'?key='+googleAPIKey+'&source='+from+'&target='+to+'&q='+text+'&callback=gotGreek.jsonCallback';
-			jsonp(url);
+			$.ajax(translateURL,{
+				type: 'GET',
+				dataType: 'jsonp',
+				success: gotGreek.jsonCallback,
+				error: function(xhr, status){console.log(xhr);console.log(status);},
+				data: {
+					key: googleAPIKey,
+					source: fromLang,
+					target: toLang,
+					q: text,
+				}
+			});
 		}
-	};
-	var jsonp = function (url) {
-		var head = document.head;
-		var script = document.createElement('script');
-		script.setAttribute('src', url);
-		head.appendChild(script);
-		head.removeChild(script);
 	};
 	var pushToLimits= function(range){
 		var startNodeValue = range.startContainer.nodeValue,
@@ -124,19 +95,20 @@ var gotGreek = function(){
 			end = range.endOffset;
 		while (start > 0 && nonBoundaryPattern.test(startNodeValue[start-1])){
 			start--;
+			console.log('moving back');
 		}
 		while (end < endNodeValue.length-1 && nonBoundaryPattern.test(endNodeValue[end])){
+			console.log('moving forward');
 			end++;
 		}
 		range.setStart(range.startContainer,start);
 		range.setEnd(range.endContainer,end);
-		return range.toString();
+		return range;
 	};
 
 	// recursively finds a word inside node that contains the point (x,y) 
-	// and is bounded by boundary characters:
-	// any space character, all punctuation marks except for single quote and dash.
-	// if no string is found an empty string is returned
+	// and is bounded by boundary characters
+	// if no string is found at (x,y) an empty string is returned
 	var extractWordAt = function(node,x,y){
 		var range,
 			currentText = node.nodeValue,
@@ -148,7 +120,7 @@ var gotGreek = function(){
 			// the sliding window (start,end) jumps over non bounding characters.
 			start =0;
 			while (start< currentText.length){
-				range = node.ownerDocument.createRange();
+				range = rangy.createRange();
 				
 				tmp =currentText.substring(start).search(nonBoundaryPattern);
 				if(tmp === -1) {break;}
@@ -162,9 +134,10 @@ var gotGreek = function(){
 					end = start + tmp;
 				}
 				range.setEnd(node,end);
-				if (boxContainsPoint(range.getBoundingClientRect(),x,y)){
+				if (boxContainsPoint(range.nativeRange.getBoundingClientRect(),x,y)){
 					//found the word
-					return range.toString();
+					rangy.getSelection().setSingleRange(range);
+					return range;
 				}
 				start = end;
 				range.detach();
@@ -178,159 +151,70 @@ var gotGreek = function(){
 
 			for (counter = 0, len= node.childNodes.length; counter < len ; counter++){
 				tmp = extractWordAt(node.childNodes[counter],x,y);
-				if (/\S/.test(tmp)){ return tmp; }
+				if (tmp && /\S/.test(tmp.toString())){ return tmp; }
 			}
 		}
-		return '';
+		return null;
 	};	
-	
-	// *****************
-	// helper functions
-	// *****************
-	
+	//TODO come on man!
 	var boxContainsPoint = function(box, x, y){
 		if (box.bottom > y && box.top < y && box.left< x && box.right > x){
 			return true;
 		}
 		return false;
 	};
-	// this function is called from init() which is only invoked by gotGreek.boot 
-	var createMenu = function(){
-		// m is the DOMElement to be returned
-		var m = document.createElement('div'),
-			fromSelect= document.createElement('select'),
-			toSelect= document.createElement('select'),
-			option,//  options in select elements
-			menuContentWrap,// wraps the contents of menu: both selects and both buttons 
-			goButton,killButton,arrowImg;
-		m.id='gotGreek-menu';
-		m.appendChild(createCloseButton('hide'));
-		m.appendChild(createAttribution());
-		m.addEventListener('mouseup',function(event){
-			event.stopPropagation();
-		});
-		
-		menuContentWrap = document.createElement('div');
-		menuContentWrap.id='gotGreek-buttonWrap';
-		toSelect.id='gotGreek-to';
-		fromSelect.id='gotGreek-from';
-		
-		// add all languages to selects, set the 'selected' values, and to container
-		for (var langCode in languages){
-			option= document.createElement('option');
-			option.value=langCode;
-			option.appendChild(document.createTextNode(languages[langCode]));
-			toSelect.appendChild(option.cloneNode(true));
-			fromSelect.appendChild(option.cloneNode(true));
-		}
-		toSelect.value = toLang;
-		fromSelect.value=fromLang;
-		menuContentWrap.appendChild(fromSelect);
-		
-		// build arrow img element and add to container
-		arrowImg = document.createElement('img');
-		arrowImg.className='gotGreek-direction';
-		arrowImg.src=arrowImageURL;
-		menuContentWrap.appendChild(arrowImg);
-		
-		menuContentWrap.appendChild(toSelect);
-		
-		// build the Go! button, and add it to container
-		goButton = document.createElement('button');
-		goButton.appendChild(document.createTextNode('Go!'));
-		goButton.id='gotGreek-go';
-		goButton.addEventListener('click',function(){
-			var tmpFrom = document.getElementById('gotGreek-from'),
-				tmpTo=	  document.getElementById('gotGreek-to');
-			go(tmpFrom.options[tmpFrom.selectedIndex].value,
-							tmpTo.options[tmpTo.selectedIndex].value);
-			document.getElementById('gotGreek-terminate').className='';
-		});
-		menuContentWrap.appendChild(goButton);
-
-		// build the Stop button, and add it to container
-		killButton = document.createElement('button');
-		killButton.id='gotGreek-terminate';
-		killButton.className='hidden';
-		killButton.appendChild(document.createTextNode('Stop GotGreek'));
-		killButton.addEventListener('click',function(){
-			menu.parentNode.removeChild(menu);
-			running = false;
-		});
-		menuContentWrap.appendChild(killButton);
-		
-		m.appendChild(menuContentWrap);
-		return m;
-	};
-
+	
 	// overlays the translation response at the point the request was initiated
 	var overlayTranslation = function(translation){
-		//don't do anything if translation box is already open
-		if(document.getElementById('gotGreek-translation-'+translation)!== null){
-			return;
-		}
-
-		var box, span, close, attribution;
-		box= document.createElement('div');
-		box.className='gotGreek-box';
-		
-		// gotGreek-box is positioned absolutely and is a direct child of body; set offsets:
-		box.style.top  = (document.documentElement.scrollTop  + currentY+10) +'px';
-		box.style.left = (document.documentElement.scrollLeft + currentX+10) +'px';
-		
-		box.id = 'gotGreek-translation-'+currentTranslate;	
-		span = document.createElement('span');
-		span.innerHTML = translation;
-
-		box.appendChild(span);
-		box.appendChild(createCloseButton('remove'));
-		box.appendChild(createAttribution());
-		document.body.appendChild(box);
-	};
-	// creates and returns a close button and depending on whether action is set to 'hide' or 'remove'
-	// sets the mouseup listener
-	var createCloseButton = function(action){
-		var close = document.createElement('img');
-		close.className='gotGreek-close';
-		close.src=closeIconURL;
-		close.addEventListener('mouseup',function(event){
-			event.stopPropagation();
-			if(action==='remove'){
-				document.body.removeChild(this.parentNode);
-			}else if (action==='hide'){
-				this.parentNode.className='hidden';
-			}
-		});
-		return close;
+		console.log('generating tooltip...');
+		$('.gotGreek-selected').data('powertip','<p>en: '+translation+
+									 '</p><hr><p>fr: '+currentTranslate+
+									 '</p><img src="'+attributionURL+
+									 '"class="gotGreek-attribution">');
+		$('.gotGreek-selected').powerTip({placement:'se',smartPlacement:true,manual:true});
+		$.powerTip.show($('.gotGreek-selected'));
 	};
 	
-	// creates attribution to Google element
-	var createAttribution = function(){
-		var attribution= document.createElement('img');
-		attribution.className='gotGreek-attribution';
-		attribution.src=attributionURL;
-		return attribution;
-	};
-	
-	//*************
-	// the public interface of gotGreek:
-	//*************
+	/*
+	 * the public interface of gotGreek:
+	*/
 	return{
 		//this function is the only function that is called from the bookmarklet
 		boot : function(){
-			if(!running && !initialized){
-				init('fr','en',	'https://raw.github.com/amirio/got-greek/master/google.png',
-								'https://raw.github.com/amirio/got-greek/master/close.png',
-								'https://raw.github.com/amirio/got-greek/master/arrow.png',
-								'AIzaSyAICISSmAHfsclKJ4eu5UtbhhtWMLUqxcY',
-								'https://www.googleapis.com/language/translate/v2');
+			if(!loaded){
+				load();
 			}
-			menu.className='';
+			else if(!initialized){
+				init('fr','en',	'https://raw.github.com/amirio/got-greek/master/google.png',
+							'https://raw.github.com/amirio/got-greek/master/close.png',
+							'https://raw.github.com/amirio/got-greek/master/arrow.png',
+							'AIzaSyAICISSmAHfsclKJ4eu5UtbhhtWMLUqxcY',
+							'https://www.googleapis.com/language/translate/v2');
+			}
+			else if(!running){
+				$('body').mouseup(translateListener);
+				$('body').mousedown(function(){
+					$('#powerTip').remove();
+					if(currentRange!==null){
+						cssApplier.undoToRange(currentRange);
+					}
+					rangy.getSelection().removeAllRanges();
+				});
+				running = true;
+				console.log('GotGreek Started.');
+			}
+			else if(running){
+				$('body').unbind('mouseup',translateListener);
+				running = false;
+				console.log('GotGreek Stopped.');
+			}
 		},
 		
 		//the jsonp callback function
 		jsonCallback : function(response){
+			console.log('recieved translation from Google Translate');
 			var translation = response.data.translations[0].translatedText;
+			console.log('translation is: '+translation);
 			//TODO what if for some reason currentTranslate is changed by another request to translate
 			// before jsonCallback is called
 			cache[currentTranslate]=translation;
