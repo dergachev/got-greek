@@ -1,25 +1,16 @@
 var gotGreek = function(){
-	//TODO 	remove all console.log
-	//TODO	remove gotgreek.css?
-	//TODO	change listeners so that right click does not fire translate
-	//TODO	write test cases in QUnit
-	//TODO 	cleanup all the names!
-	/*TODO 	extract source language from html.lang and 
-			target language from navigator.lang
-			1- how to give further options (say if they are both english: ooh! Merriam Webster has free Api with 1000 queries per day)
-			2- is html.lang the only resource I have?
-	*/
-	//TODO	two immediate clicks ->bug
 	var	config = {
 			boundaryPattern:/[\s:!.,\"\(\)«»%$]/,
 			nonBoundaryPattern:/[^\s:!.,\"\(\)«»%$]/,
-			attributionUrl:'https://raw.github.com/amirio/got-greek/master/google.png',
+			attributionUrl:'https://s3.amazonaws.com/gotgreek/google.png',
 			googleApiKey:'AIzaSyAICISSmAHfsclKJ4eu5UtbhhtWMLUqxcY',
 			googleTranslateUrl:'https://www.googleapis.com/language/translate/v2',
-			source: 'fr',
-			target: 'en',
+			source: '',
+			target: '',
 			usePowerTip: false,
-		},resources= {
+		},
+		//external resources that GotGreek has to load
+		resources= {
 			jQuery: {
 				url: '//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js',
 				loaded: (typeof jQuery !== 'undefined')
@@ -41,17 +32,12 @@ var gotGreek = function(){
 				loaded: !config.usePowerTip || ((typeof rangy !== 'undefined')?(typeof rangy.modules.CssClassApplier !== undefined):false)
 			}
 		},
-		loaded=false,running=false,initialized=false, cache,
-		//TODO can I remove all this currentX? should I?
-		currentSource, currentTranslation, currentRange, cssApplier,currentX,currentY;
-	var load = function(){
-		
-		console.log('loading GotGreek...');
-		var m = document.createElement('div');
-		m.setAttribute('id','gotGreek-menu');
-		m.appendChild(document.createTextNode('Loading ...'));
-
-		document.body.appendChild(m);
+		currentJob = {
+			text: '', translation: '', range: null, x:0, y:0
+		},
+		loaded=false,running=false,initialized=false, cache, cssApplier;
+	// loads all external libraries 
+	var load = function(){	
 		yepnope([{
 			test: resources.jQuery.loaded,
 			nope: resources.jQuery.url,
@@ -73,13 +59,12 @@ var gotGreek = function(){
 	var yepnopeCallback= function(url,key,result){
 		for (var r in resources){
 			if (resources[r].url === url){
-				console.log(r+' was not here and is now loaded');
 				resources[r].loaded = true;
-				break;
+				return terminateLoad();
 			}
 		}
-		terminateLoad();
 	};
+	// checks if all necessary resources are loaded, if so removes the overlay meny and calls boot
 	var terminateLoad= function(){
 		//TODO handle the case were some resources are unavailable
 		var check=true;
@@ -88,120 +73,114 @@ var gotGreek = function(){
 		}
 		if (check){
 			loaded = true;
-			jQuery('#gotGreek-menu').remove();
+			jQuery('#gotGreek-menu').text('GotGreek is Ready!');
+			jQuery('#gotGreek-menu').fadeOut(2000,function(){
+				jQuery('#gotGreek-menu').remove();
+			});
 			gotGreek.boot();
 		}
 	};	
+	// initalizes config.source, config.target, and all the state variables
 	var init = function(){
-		console.log('initializing GotGreek...');
+		//TODO handle the case where html lang is set to an ISO 639-1 non-compliant value
+		config.source = (jQuery('html').attr('lang') || jQuery('html').attr('xml:lang') || 'fr').toLowerCase();
+		config.target = (navigator.language.substring(0,2) || navigator.userLanguage.substring(0,2) || 'en').toLowerCase();
 		cache={};
 		rangy.init();
-		currentRange= null;
+		currentJob.range= null;
 		if (config.usePowerTip){
 			cssApplier = rangy.createCssClassApplier('gotGreek-selected',{normalize:true});
 		}
 		initialized = true;
-		console.log('GotGreek initialized.');
 		gotGreek.boot();
 	};
 	var translateListener= function(event){
 		if(event.button!==0 || !running){return;}
-		var text,translation;
 		// if there is no selection try to wrap a word around click point
 		if (rangy.getSelection().isCollapsed){
-			currentRange = extractWordAt(event.target, event.clientX, event.clientY);
+			currentJob.range = extractWordAt(event.target, event.clientX, event.clientY);
 		}
 		// if there is a selection, push it to its bounding limits
 		else{
-			currentRange = rangy.getSelection().getRangeAt(0);
-			pushToLimits(currentRange);
+			currentJob.range = rangy.getSelection().getRangeAt(0);
+			pushToLimits(currentJob.range);
 		}
-		if(currentRange===null){
+		if(currentJob.range===null){
 			rangy.getSelection().removeAllRanges();
 			return;
 		}
-		//TODO clean the following mess: (why text? just pour it into currentSource after checking condiitons)
 		//TODO instead of toString, go through the range and jump over script tags
-		text = currentRange.toString();
-		// translate the word
-		if (/\S/.test(text) && /\D/.test(text)){
-			currentX = event.clientX;
-			currentY = event.clientY;
+		// if what you found is not garbage translate it
+		var tmp=currentJob.range.toString();
+		if (/\S/.test(tmp) && /\D/.test(tmp)){
+			currentJob.text = tmp;
+			currentJob.x = event.clientX;
+			currentJob.y = event.clientY;
 			if(config.usePowerTip){
-				cssApplier.applyToRange(currentRange);
+				cssApplier.applyToRange(currentJob.range);
 			}
-			rangy.getSelection().setSingleRange(currentRange);
-			if (cache[text]){
-				//return overlayTranslation(cache[text]);
+			rangy.getSelection().setSingleRange(currentJob.range);
+			if (cache[currentJob.text]){
+				currentJob.translation = cache[text];
+				return showTooltip();
 			}
-			currentSource = text;
 			//send request to Google
-			if(text.trim()!== ''){
-				jQuery.ajax(/*config.googleTranslateUrl,*/{
-					url: config.googleTranslateUrl,
-					type: 'GET',
-					dataType: 'jsonp',
-					success: gotGreek.jsonCallback,
-					//TODO handle error properly	
-					error: function(xhr, status){console.log(xhr);console.log(status);},
-					data: {
-						key: config.googleApiKey,
-						source: config.source,
-						target: config.target,
-						q: text,
-					}
-				});
-			}
+			jQuery.ajax({
+				url: config.googleTranslateUrl,
+				type: 'GET',
+				dataType: 'jsonp',
+				success: gotGreek.jsonCallback,
+				error: function(xhr, status){console.log(xhr);console.log(status);},
+				data: {
+					key: config.googleApiKey,
+					source: config.source,
+					target: config.target,
+					q: currentJob.text,
+				}
+			});
 		}
 	};
 	var showTooltip= function(){
 		if(config.usePowerTip){
-			jQuery('.gotGreek-selected').data('powertip','<p>en: '+currentTranslation+
-									 '</p><hr><p>fr: '+currentSource+
-									 '</p><img src="'+config.attributionUrl+
-									 '"class="gotGreek-attribution">');
+			jQuery('.gotGreek-selected').data('powertip','<p><b>en</b>: '+currentJob.translation+
+									 '</p><hr><p><b>fr</b>: '+currentJob.text+
+									 '</p><img src="'+config.attributionUrl+'">');
 			jQuery('.gotGreek-selected').powerTip({placement:'se',smartPlacement:true,manual:true});
 			jQuery.powerTip.show(jQuery('.gotGreek-selected'));
 		}else{
-			//TODO cleanup
-			jQuery('body').append(jQuery(document.createElement('div')).attr('id','gotGreek-box').html(
-						'<p> en: '+currentTranslation+
-						'</p><hr><p>fr: '+currentSource+ '</p><img src="'+config.attributionUrl+
-						 '"class="gotGreek-attribution">').css('top',(jQuery(document).scrollTop()+currentY+10)+'px').css('left',
-						 											 (jQuery(document).scrollLeft()+currentX+10)+'px'));
+			jQuery('body').append(
+						jQuery(document.createElement('div'))
+						.attr('id','gotGreek-box')
+						.html(	'<p><b>en</b>: '+currentJob.translation+'</p><hr><p><b>fr</b>: '+currentJob.text+ 
+								'</p><img src="'+config.attributionUrl+ '">')
+						.css('top',(jQuery(document).scrollTop()+currentJob.y+10)+'px')
+						.css('left',(jQuery(document).scrollLeft()+currentJob.x+10)+'px'));
 		}
-	}
+	};
+	// helper function for translateListener, pushes a range to its boundaries
 	var pushToLimits= function(range){
 		var startNodeValue = range.startContainer.nodeValue,
 			endNodeValue = range.endContainer.nodeValue,
 			start= range.startOffset,
 			end = range.endOffset;
-		//TODO startNodeValue and endNodeValue might be null
 		while (start > 0 && startNodeValue && config.nonBoundaryPattern.test(startNodeValue[start-1])){
 			start--;
-			console.log('moving back');
 		}
 		while (endNodeValue && end < endNodeValue.length-1 && config.nonBoundaryPattern.test(endNodeValue[end])){
-			console.log('moving forward');
 			end++;
 		}
 		range.setStart(range.startContainer,start);
 		range.setEnd(range.endContainer,end);
 		return range;
 	};
-
-	// recursively finds a word inside node that contains the point (x,y) 
-	// and is bounded by boundary characters
-	// if no string is found at (x,y) an empty string is returned
+	// helper function for translateListener, recursively traverses the DOM in search of the word that contains (x,y) 
 	var extractWordAt = function(node,x,y){
 		var range,
 			currentText = node.nodeValue,
 			start, end, counter, tmp, len;
 		if (node.nodeType === node.TEXT_NODE && /\S/.test(currentText)){
-			// if node is a text node, start digging the word out:
-			// slide the range (start,end) along node.nodeValue until
-			// the corresponding range contains (x,y)
-			// the sliding window (start,end) jumps over non bounding characters.
+			// if node is a text node, start digging the word out: slide the range (start,end) along node.nodeValue until
+			// the corresponding range contains (x,y) the sliding window (start,end) jumps over non bounding characters.
 			start =0;
 			while (start< currentText.length){
 				range = rangy.createRange();
@@ -227,11 +206,10 @@ var gotGreek = function(){
 				range.detach();
 			}
 		}
-		// if node is an element, go through its children.
-		// if anyone has the word, stop looking
+		// if node is an element, go through its children
 		else if (node.nodeType === node.ELEMENT_NODE){
 			// if (x,y) falls outside of containing rectangle of the node, don't bother.
-			if (!boxContainsPoint(node.getBoundingClientRect(), x, y)){ return ''; }
+			if (!boxContainsPoint(node.getBoundingClientRect(), x, y)){ return null; }
 			for (counter = 0, len= node.childNodes.length; counter < len ; counter++){
 				tmp = extractWordAt(node.childNodes[counter],x,y);
 				if (tmp && /\S/.test(tmp.toString())){ return tmp; }
@@ -245,7 +223,6 @@ var gotGreek = function(){
 		}
 		return false;
 	};
-	
 	/*
 	 * the public interface of gotGreek:
 	*/
@@ -253,43 +230,44 @@ var gotGreek = function(){
 		//this function is the only function that is called from the bookmarklet
 		boot : function(){
 			if(!loaded){
-				console.log('loading');
 				load();
 			}else if(!initialized){
 				init();
 			}else if(!running){
 				jQuery('body').mouseup(translateListener);
-				//TODO this causes a bit of funny behavior
-				//TODO change it!
 				jQuery('body').mousedown(function(){
 					if(config.usePowerTip){
 						jQuery('#powerTip').remove();
 					}else{
 						jQuery('#gotGreek-box').remove();
 					}
-					if(config.usePowerTip && currentRange!==null){
-						cssApplier.undoToRange(currentRange);
+					if(config.usePowerTip && currentJob.range!==null){
+						cssApplier.undoToRange(currentJob.range);
 					}
-					rangy.getSelection().removeAllRanges();
 				});
 				running = true;
-				console.log('GotGreek Started.');
 			}else if(running){
+				var m = jQuery(document.createElement('div')).attr('id','gotGreek-menu').text('GotGreek is Stopping...');
+				
+				jQuery('body').append(m);
 				jQuery('body').unbind('mouseup',translateListener);
 				running = false;
-				console.log('GotGreek Stopped.');
+				m.fadeOut(1000,function(){
+						if (config.usePowerTip){
+						jQuery('#powerTip').remove();
+						if(currentJob.range!== null) {
+							cssApplier.undoToRange(currentJob.range);
+						}
+					}else{
+						jQuery('#gotGreek-box').remove();
+					}
+					m.remove();
+				});
 			}
 		},
-		
-		//the jsonp callback function
 		jsonCallback : function(response){
-			console.log('recieved translation from Google Translate');
-			currentTranslation = response.data.translations[0].translatedText;
-			console.log('translation is: '+currentTranslation);
-			//TODO what if for some reason currentSource is changed by another request to translate
-			// before jsonCallback is called. SOLUTION: make a custom function that calles jsonCallback with a currentrange and currentSource argument.
-			// also give an argument to overlayTranslation
-			cache[currentSource]=currentTranslation;
+			currentJob.translation = response.data.translations[0].translatedText;
+			cache[currentJob.text]=currentJob.translation;
 			showTooltip();
 		}
 	};

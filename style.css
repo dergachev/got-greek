@@ -1,19 +1,21 @@
-#gotGreek-box{
-	background-color:#444444;
-	padding: 0.5em;
-	z-index: 2147483647; 
+#powerTip, #gotGreek-box, #gotGreek-menu{
+	font-family:Arial;
 	opacity:0.85;
+	z-index:2147483647;
+	background-color:#000000;
+	color: #e3ce63;
+}
+#powerTip, #gotGreek-box{
 	position:absolute;
 	font-size:12px;
-	border-radius: 5px;
-	border:#eeeeee solid;
+	padding: 10px;
 	min-width:10em;
 	max-width:30em;
-	color:#cddde6;
-	font-family:Arial;
-	white-space:pre-line;
 } 
-.gotGreek-attribution{
+#powerTip p, #gotGreek-box p {
+	white-space:pre-line;
+}
+#powerTip img, #gotGreek-box img{
 	position:absolute;
 	bottom:5px;
 	right:5px;
@@ -21,16 +23,11 @@
 }
 #gotGreek-menu{
 	position:fixed;
-	z-index:2147483647;
+	font-size:18px;
 	top:5em;
 	left:5%;
 	width:90%;
-	opacity:0.85;
-	background-color:#444444;
-	color:gold;
 	display:block;
-	font-weight:bold;
-	font-family:Arial;
 	min-height:100px;
 	text-align:center;
 }
