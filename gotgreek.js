@@ -1,7 +1,6 @@
 var gotGreek = function(){
-	//TODO 	increase z-index of menu
+	//TODO 	remove all console.log
 	//TODO	remove gotgreek.css?
-	//TODO 	jump over scrip elements
 	//TODO	change listeners so that right click does not fire translate
 	//TODO	write test cases in QUnit
 	//TODO 	cleanup all the names!
@@ -10,49 +9,43 @@ var gotGreek = function(){
 			1- how to give further options (say if they are both english: ooh! Merriam Webster has free Api with 1000 queries per day)
 			2- is html.lang the only resource I have?
 	*/
-			
-	/*TODO	powertip does allow me to change the tooltip ID but then none of the 
-			styles would apply to it (making the tooltip become a block at the end of the page)
-			since the css is defined only in terms of ids!
-	*/
 	//TODO	two immediate clicks ->bug
 	var	config = {
-					boundaryPattern:/[\s:!.,\"\(\)«»%$]/,
-					nonBoundaryPattern:/[^\s:!.,\"\(\)«»%$]/,
-					attributionUrl:'https://raw.github.com/amirio/got-greek/master/google.png',
-					googleApiKey:'AIzaSyAICISSmAHfsclKJ4eu5UtbhhtWMLUqxcY',
-					googleTranslateUrl:'https://www.googleapis.com/language/translate/v2',
-					source: 'fr',
-					target: 'en',
-					resources: {
-						jQuery: {
-							url: '//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js',
-							loaded: (typeof jQuery !== 'undefined')
-						},
-						powerTip: {
-							url: '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/jquery.powertip.js',
-							//url: '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/jquery.powertip.min.js',
-							//url: 'http://localhost/powertip/jquery.powertip.js',
-							loaded: (typeof jQuery !== 'undefined')?(typeof jQuery.fn.powerTip !== 'undefined'):false
-						},
-						powerTipCss: {
-							url: '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/css/jquery.powertip.min.css',
-							loaded: (typeof jQuery !== 'undefined')?(typeof jQuery.fn.powerTip !== 'undefined'):false
-						},
-						rangyCore: {
-							url: '//rangy.googlecode.com/svn/trunk/dev/rangy-core.js',
-							loaded: (typeof rangy !== 'undefined')
-						},
-						rangyCssApplier: {
-							url: '//rangy.googlecode.com/svn/trunk/dev/rangy-cssclassapplier.js',
-							loaded: (typeof rangy !== 'undefined')?(typeof rangy.modules.CssClassApplier !== undefined):false
-						}
-					}
-				 },
+			boundaryPattern:/[\s:!.,\"\(\)«»%$]/,
+			nonBoundaryPattern:/[^\s:!.,\"\(\)«»%$]/,
+			attributionUrl:'https://raw.github.com/amirio/got-greek/master/google.png',
+			googleApiKey:'AIzaSyAICISSmAHfsclKJ4eu5UtbhhtWMLUqxcY',
+			googleTranslateUrl:'https://www.googleapis.com/language/translate/v2',
+			source: 'fr',
+			target: 'en',
+			usePowerTip: false,
+		},resources= {
+			jQuery: {
+				url: '//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js',
+				loaded: (typeof jQuery !== 'undefined')
+			},
+			powerTip: {
+				url: '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/jquery.powertip.min.js',
+				loaded: !config.usePowerTip || ((typeof jQuery !== 'undefined')?(typeof jQuery.fn.powerTip !== 'undefined'):false)
+			},
+			powerTipCss: {
+				url: '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/css/jquery.powertip.min.css',
+				loaded: !config.usePowerTip || ((typeof jQuery !== 'undefined')?(typeof jQuery.fn.powerTip !== 'undefined'):false)
+			},
+			rangyCore: {
+				url: '//rangy.googlecode.com/svn/trunk/dev/rangy-core.js',
+				loaded: (typeof rangy !== 'undefined')
+			},
+			rangyCssApplier: {
+				url: '//rangy.googlecode.com/svn/trunk/dev/rangy-cssclassapplier.js',
+				loaded: !config.usePowerTip || ((typeof rangy !== 'undefined')?(typeof rangy.modules.CssClassApplier !== undefined):false)
+			}
+		},
 		loaded=false,running=false,initialized=false, cache,
 		//TODO can I remove all this currentX? should I?
-		currentSource, currentTranslation, currentRange, cssApplier;
+		currentSource, currentTranslation, currentRange, cssApplier,currentX,currentY;
 	var load = function(){
+		
 		console.log('loading GotGreek...');
 		var m = document.createElement('div');
 		m.setAttribute('id','gotGreek-menu');
@@ -60,60 +53,60 @@ var gotGreek = function(){
 
 		document.body.appendChild(m);
 		yepnope([{
-			test: config.resources.jQuery.loaded,
-			nope: config.resources.jQuery.url,
+			test: resources.jQuery.loaded,
+			nope: resources.jQuery.url,
 			callback: yepnopeCallback
 		},{
-			test: config.resources.powerTip.loaded,
-			nope: [config.resources.powerTip.url,config.resources.powerTipCss.url],
+			test: resources.powerTip.loaded,
+			nope: [resources.powerTip.url,resources.powerTipCss.url],
 			callback: yepnopeCallback
 		},{
-			test: config.resources.rangyCore.loaded,
-			nope: config.resources.rangyCore.url,
+			test: resources.rangyCore.loaded,
+			nope: resources.rangyCore.url,
 			callback: yepnopeCallback
 		},{
-			test: config.resources.rangyCssApplier.loaded,
-			nope: config.resources.rangyCssApplier.url,
+			test: resources.rangyCssApplier.loaded,
+			nope: resources.rangyCssApplier.url,
 			callback: yepnopeCallback
 		}]);
 	};
+	var yepnopeCallback= function(url,key,result){
+		for (var r in resources){
+			if (resources[r].url === url){
+				console.log(r+' was not here and is now loaded');
+				resources[r].loaded = true;
+				break;
+			}
+		}
+		terminateLoad();
+	};
 	var terminateLoad= function(){
+		//TODO handle the case were some resources are unavailable
 		var check=true;
-		for (r in config.resources){
-			check = check && config.resources[r].loaded;
+		for (r in resources){
+			check = check && resources[r].loaded;
 		}
 		if (check){
 			loaded = true;
 			jQuery('#gotGreek-menu').remove();
 			gotGreek.boot();
 		}
-	}
-	var yepnopeCallback= function(url,key,result){
-		for (var r in config.resources){
-			if (config.resources[r].url === url){
-				console.log(r+' was not here and is now loaded');
-				config.resources[r].loaded = true;
-				break;
-			}
-		}
-		terminateLoad();
-	};
+	};	
 	var init = function(){
-		//TODO what if the user is not connected to Internet
-		// or for any other reason one of these resources was unavailable?
 		console.log('initializing GotGreek...');
 		cache={};
 		rangy.init();
 		currentRange= null;
-		cssApplier = rangy.createCssClassApplier('gotGreek-selected',{normalize:true});
+		if (config.usePowerTip){
+			cssApplier = rangy.createCssClassApplier('gotGreek-selected',{normalize:true});
+		}
 		initialized = true;
 		console.log('GotGreek initialized.');
 		gotGreek.boot();
 	};
 	var translateListener= function(event){
-		if(!running){return;}
+		if(event.button!==0 || !running){return;}
 		var text,translation;
-		console.log(rangy.getSelection().isCollapsed);
 		// if there is no selection try to wrap a word around click point
 		if (rangy.getSelection().isCollapsed){
 			currentRange = extractWordAt(event.target, event.clientX, event.clientY);
@@ -127,12 +120,16 @@ var gotGreek = function(){
 			rangy.getSelection().removeAllRanges();
 			return;
 		}
+		//TODO clean the following mess: (why text? just pour it into currentSource after checking condiitons)
+		//TODO instead of toString, go through the range and jump over script tags
 		text = currentRange.toString();
 		// translate the word
 		if (/\S/.test(text) && /\D/.test(text)){
-			cssApplier.applyToRange(currentRange);
-			//this next line is necessary because
-			//rangy destroys the range when applyToRange is invoked
+			currentX = event.clientX;
+			currentY = event.clientY;
+			if(config.usePowerTip){
+				cssApplier.applyToRange(currentRange);
+			}
 			rangy.getSelection().setSingleRange(currentRange);
 			if (cache[text]){
 				//return overlayTranslation(cache[text]);
@@ -140,7 +137,7 @@ var gotGreek = function(){
 			currentSource = text;
 			//send request to Google
 			if(text.trim()!== ''){
-				$.ajax(/*config.googleTranslateUrl,*/{
+				jQuery.ajax(/*config.googleTranslateUrl,*/{
 					url: config.googleTranslateUrl,
 					type: 'GET',
 					dataType: 'jsonp',
@@ -157,6 +154,23 @@ var gotGreek = function(){
 			}
 		}
 	};
+	var showTooltip= function(){
+		if(config.usePowerTip){
+			jQuery('.gotGreek-selected').data('powertip','<p>en: '+currentTranslation+
+									 '</p><hr><p>fr: '+currentSource+
+									 '</p><img src="'+config.attributionUrl+
+									 '"class="gotGreek-attribution">');
+			jQuery('.gotGreek-selected').powerTip({placement:'se',smartPlacement:true,manual:true});
+			jQuery.powerTip.show(jQuery('.gotGreek-selected'));
+		}else{
+			//TODO cleanup
+			jQuery('body').append(jQuery(document.createElement('div')).attr('id','gotGreek-box').html(
+						'<p> en: '+currentTranslation+
+						'</p><hr><p>fr: '+currentSource+ '</p><img src="'+config.attributionUrl+
+						 '"class="gotGreek-attribution">').css('top',(jQuery(document).scrollTop()+currentY+10)+'px').css('left',
+						 											 (jQuery(document).scrollLeft()+currentX+10)+'px'));
+		}
+	}
 	var pushToLimits= function(range){
 		var startNodeValue = range.startContainer.nodeValue,
 			endNodeValue = range.endContainer.nodeValue,
@@ -218,7 +232,6 @@ var gotGreek = function(){
 		else if (node.nodeType === node.ELEMENT_NODE){
 			// if (x,y) falls outside of containing rectangle of the node, don't bother.
 			if (!boxContainsPoint(node.getBoundingClientRect(), x, y)){ return ''; }
-			//TODO jquery
 			for (counter = 0, len= node.childNodes.length; counter < len ; counter++){
 				tmp = extractWordAt(node.childNodes[counter],x,y);
 				if (tmp && /\S/.test(tmp.toString())){ return tmp; }
@@ -242,25 +255,26 @@ var gotGreek = function(){
 			if(!loaded){
 				console.log('loading');
 				load();
-			}
-			else if(!initialized){
+			}else if(!initialized){
 				init();
-			}
-			else if(!running){
+			}else if(!running){
 				jQuery('body').mouseup(translateListener);
 				//TODO this causes a bit of funny behavior
 				//TODO change it!
 				jQuery('body').mousedown(function(){
-					jQuery('#powerTip').remove();
-					if(currentRange!==null){
+					if(config.usePowerTip){
+						jQuery('#powerTip').remove();
+					}else{
+						jQuery('#gotGreek-box').remove();
+					}
+					if(config.usePowerTip && currentRange!==null){
 						cssApplier.undoToRange(currentRange);
 					}
 					rangy.getSelection().removeAllRanges();
 				});
 				running = true;
 				console.log('GotGreek Started.');
-			}
-			else if(running){
+			}else if(running){
 				jQuery('body').unbind('mouseup',translateListener);
 				running = false;
 				console.log('GotGreek Stopped.');
@@ -276,12 +290,7 @@ var gotGreek = function(){
 			// before jsonCallback is called. SOLUTION: make a custom function that calles jsonCallback with a currentrange and currentSource argument.
 			// also give an argument to overlayTranslation
 			cache[currentSource]=currentTranslation;
-			/*jQuery('.gotGreek-selected').data('powertip','<p>en: '+currentTranslation+
-									 '</p><hr><p>fr: '+currentSource+
-									 '</p><img src="'+config.attributionUrl+
-									 '"class="gotGreek-attribution">');
-			jQuery('.gotGreek-selected').powerTip({placement:'se',smartPlacement:true,manual:true});
-			jQuery.powerTip.show(jQuery('.gotGreek-selected'));*/
+			showTooltip();
 		}
 	};
 }();

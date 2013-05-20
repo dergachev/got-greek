@@ -1,4 +1,9 @@
-#powerTip{
+#gotGreek-box{
+	background-color:#444444;
+	padding: 0.5em;
+	z-index: 2147483647; 
+	opacity:0.85;
+	position:absolute;
 	font-size:12px;
 	border-radius: 5px;
 	border:#eeeeee solid;
@@ -16,7 +21,7 @@
 }
 #gotGreek-menu{
 	position:fixed;
-	z-index:5000;
+	z-index:2147483647;
 	top:5em;
 	left:5%;
 	width:90%;
@@ -28,11 +33,4 @@
 	font-family:Arial;
 	min-height:100px;
 	text-align:center;
-}
-#gotGreek-menu.hidden,#gotGreek-menu .hidden{
-	display:none;
-}
-.gotGreek-selected::-moz-selection{
-	background: gold;
-	border-radius:5px;
 }
