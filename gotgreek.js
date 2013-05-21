@@ -113,7 +113,7 @@ var gotGreek = function(){
 		// if what you found is not garbage translate it
 		var tmp=currentJob.range.toString();
 		if (/\S/.test(tmp) && /\D/.test(tmp)){
-			currentJob.text = tmp;
+			currentJob.text = tmp.replace(/\s/g,' ');
 			currentJob.x = event.clientX;
 			currentJob.y = event.clientY;
 			if(config.usePowerTip){
