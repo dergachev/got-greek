@@ -10,7 +10,9 @@ Upon activation, __GotGreek__ monitors user behavior and provides word or phrase
 =========
 Languages:
 =========
-All language codes must be in compliance with [ISO 639-1](//en.wikipedia.org/wiki/List_of_ISO_639-1_codes) for Google Translate to respond correctly. Currently GotGreek tries to detect source language from attributes of `html` element (`lang` or `xml:lang`) with French as default fallback. Similarly target language is detected from `navigator` settings with English as default fallback.
+All language codes must be in compliance with [ISO 639-1](//en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
+for Google Translate to respond correctly. Currently, GotGreek tries to detect source language from attributes
+of `html` element (`lang` or `xml:lang`) with French as default fallback. Similarly, target language is detected from `navigator` settings with English as default fallback.
 
 
 =========
