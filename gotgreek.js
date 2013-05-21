@@ -95,6 +95,16 @@ var gotGreek = function(){
 		gotGreek.boot();
 	};
 	var translateListener= function(event){
+		// remove all existing tooltips
+		if(config.usePowerTip){
+			jQuery('#powerTip').remove();
+			if (currentJob.range !== null){
+				cssApplier.undoToRange(currentJob.range);
+			}
+		}else{
+			console.log(jQuery('#gotGreek-box'));
+			jQuery('#gotGreek-box').remove();
+		}
 		if(event.button!==0 || !running){return;}
 		// if there is no selection try to wrap a word around click point
 		if (rangy.getSelection().isCollapsed){
@@ -121,7 +131,7 @@ var gotGreek = function(){
 			}
 			rangy.getSelection().setSingleRange(currentJob.range);
 			if (cache[currentJob.text]){
-				currentJob.translation = cache[text];
+				currentJob.translation = cache[currentJob.text];
 				return showTooltip();
 			}
 			//send request to Google
@@ -234,17 +244,7 @@ var gotGreek = function(){
 			}else if(!initialized){
 				init();
 			}else if(!running){
-				jQuery('body').mouseup(translateListener);
-				jQuery('body').mousedown(function(){
-					if(config.usePowerTip){
-						jQuery('#powerTip').remove();
-					}else{
-						jQuery('#gotGreek-box').remove();
-					}
-					if(config.usePowerTip && currentJob.range!==null){
-						cssApplier.undoToRange(currentJob.range);
-					}
-				});
+				jQuery(window).mouseup(translateListener);
 				running = true;
 			}else if(running){
 				var m = jQuery(document.createElement('div')).attr('id','gotGreek-menu').text('GotGreek is Stopping...');
@@ -253,7 +253,7 @@ var gotGreek = function(){
 				jQuery('body').unbind('mouseup',translateListener);
 				running = false;
 				m.fadeOut(1000,function(){
-						if (config.usePowerTip){
+					if (config.usePowerTip){
 						jQuery('#powerTip').remove();
 						if(currentJob.range!== null) {
 							cssApplier.undoToRange(currentJob.range);
