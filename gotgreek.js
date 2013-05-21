@@ -161,7 +161,7 @@ var gotGreek = function(){
 			jQuery('body').append(
 						jQuery(document.createElement('div'))
 						.attr('id','gotGreek-box')
-						.html(	'<p><b>en</b>: '+currentJob.translation+'</p><hr><p><b>fr</b>: '+currentJob.text+ 
+						.html(	'<p><b>'+config.target+'</b>: '+currentJob.translation+'</p><hr><p><b>'+config.source+'</b>: '+currentJob.text+ 
 								'</p><img src="'+config.attributionUrl+ '">')
 						.css('top',(jQuery(document).scrollTop()+currentJob.y+10)+'px')
 						.css('left',(jQuery(document).scrollLeft()+currentJob.x+10)+'px'));
