@@ -152,8 +152,8 @@ var gotGreek = function(){
 	};
 	var showTooltip= function(){
 		if(config.usePowerTip){
-			jQuery('.gotGreek-selected').data('powertip','<p><b>en</b>: '+currentJob.translation+
-									 '</p><hr><p><b>fr</b>: '+currentJob.text+
+			jQuery('.gotGreek-selected').data('powertip','<p><b>'+config.target+'</b>: '+currentJob.translation+
+									 '</p><hr><p><b>'+config.source+'</b>: '+currentJob.text+
 									 '</p><img src="'+config.attributionUrl+'">');
 			jQuery('.gotGreek-selected').powerTip({placement:'se',smartPlacement:true,manual:true});
 			jQuery.powerTip.show(jQuery('.gotGreek-selected'));
