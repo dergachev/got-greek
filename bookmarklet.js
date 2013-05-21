@@ -29,7 +29,6 @@ function loadGotGreek(){
 	});
 }
 function runGotGreek(){
-	console.log(typeof gotGreek);
 	gotGreek.boot();
 }
 run();void(0);
