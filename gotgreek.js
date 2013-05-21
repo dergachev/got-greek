@@ -83,8 +83,8 @@ var gotGreek = function(){
 	// initalizes config.source, config.target, and all the state variables
 	var init = function(){
 		//TODO handle the case where html lang is set to an ISO 639-1 non-compliant value
-		config.source = (jQuery('html').attr('lang') || jQuery('html').attr('xml:lang') || 'fr').toLowerCase();
-		config.target = (navigator.language.substring(0,2) || navigator.userLanguage.substring(0,2) || 'en').toLowerCase();
+		config.source = (jQuery('html').attr('lang') || jQuery('html').attr('xml:lang') || 'fr').toLowerCase().substring(0,2);
+		config.target = (navigator.language || navigator.userLanguage || 'en').toLowerCase().substring(0,2);
 		cache={};
 		rangy.init();
 		currentJob.range= null;

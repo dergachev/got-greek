@@ -24,7 +24,7 @@ function run(){
 }
 function loadGotGreek(){
 	yepnope({
-		load: 'http://localhost/gotgreek/gotgreek.js',
+		load: '//raw.github.com/amirio/got-greek/master/gotgreek.js',
 		callback: runGotGreek
 	});
 }
