@@ -3,7 +3,8 @@ AJAX translation bookmarklet
 Upon activation, __GotGreek__ monitors user behavior and provides word or phrase translations (powered by <a href="https://developers.google.com/translate/">Google Translate</a>) in the following fashion:
 
 1. If user clicks on the screen, GotGreek tries to find a word (bounded by non-word characters) that contains the coordinates the user clicked at.
-2. If user makes a selection, upon release of the mouse, selection is pushed to its non-word boundares and translation is provided in the same fashion.
+2. If user makes a selection, upon release of the mouse, selection is pushed to its non-word boundares and translation is provided.
+3. Translations are provided as tooltips that persist and are dismissed by further user clicks.
 3. Upon initial loading of GotGreek, subsequent invokations of the bookmarklet script will pause/start GotGreek.
 
 =========
