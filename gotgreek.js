@@ -250,7 +250,7 @@ var gotGreek = function(){
 				var m = jQuery(document.createElement('div')).attr('id','gotGreek-menu').text('GotGreek is Stopping...');
 				
 				jQuery('body').append(m);
-				jQuery('body').unbind('mouseup',translateListener);
+				jQuery(window).unbind('mouseup',translateListener);
 				running = false;
 				m.fadeOut(1000,function(){
 					if (config.usePowerTip){
