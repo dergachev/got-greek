@@ -22,4 +22,5 @@ Known Issues
 2. Yepnope.js does not set the `type` attribute in the `script` tags it injects. Depending on the user browser this *might* cause some errors, since a `script` tag must have its type attribute set appropriately in HTML versions upto 4 and in XHTML.
 3. If the page has any global variable named `jQuery` which is not actually jQuery, the script will fail.
 4. If `usePowerTip` is enabled, in some pages (potentially due to similar reasons as in [3]) where `$` is assigned something but its conventional jQuery, the `jquery.powertip.js` script will not bind `powerTip()` to `jQuery.prototype` (for example look at [LeMonde](http://www.lemonde.fr)).
-5. If `usePowerTip` is enabled, the GotGreek will not work on pages that already have loaded a version of jQuery prior to `1.7.0` (for example look at [LaPresse](http://www.lapresse.ca)).
+5. If `config.usePowerTip` is set to `true`, GotGreek will not work on pages that already have loaded a version of jQuery prior to `1.7.0` (for example look at [LaPresse](http://www.lapresse.ca)).
+6. If there happens to be a `script` element in the DOM between the beginning and end nodes of user selection, the text that GotGreek translates will include the JavaScript code inside the `script`.
