@@ -17,7 +17,7 @@ All language codes must be in compliance with [ISO 639-1](//en.wikipedia.org/wik
 Known Issues
 =========
 
-1. If the subject page is served by a server with certain Content Security Policy directives, the bookmarklet might break since it might not be able to inject the libraries it needs to operate in the page (for example look at [FaceBook](//www.facebook.com) or [GitHub](//www.github.com)).
+1. If the subject page is served by a server with certain [Content Security Policy](//developer.mozilla.org/en-US/docs/Security/CSP/Introducing_Content_Security_Policy) directives, the bookmarklet might break since it might not be able to inject the libraries it needs to operate in the page (for example look at [FaceBook](//www.facebook.com) or [GitHub](//www.github.com)).
 2. If the `html` element in the page on which GotGreek is being activated has its `lang` attribute set to a non-standard value, Google would respond with an error.
 2. Yepnope.js does not set the `type` attribute in the `script` tags it injects. Depending on the user browser this *might* cause some errors, since a `script` tag must have its type attribute set appropriately in HTML versions upto 4 and in XHTML.
 3. If the page has any global variable named `jQuery` which is not actually jQuery, the script will fail.
