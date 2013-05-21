@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+	<head> 
+        <meta charset="utf-8">
+		<title>Got Greek?</title>
+		<link href='http://fonts.googleapis.com/css?family=Roboto+Slab' rel='stylesheet' type='text/css'>
+		<link href='gh-style.css' rel='stylesheet' type='text/css'>
+
+	</head>
+	<body>
+		<div id='content'>
+			<a href='javascript:function run(){if(document.getElementById("gotgreekcss")===null){var style=document.createElement("link");style.type="text/css";style.rel="stylesheet";style.href="https://s3.amazonaws.com/gotgreek/style.css";style.id="gotgreekcss";document.head.appendChild(style);}if (document.getElementById("gotgreekjs")===null){var scr=document.body.appendChild(document.createElement("script"));scr.id="gotgreekjs";scr.type ="text/javascript";scr.src="http://raw.github.com/amirio/got-greek/master/gotgreek.js";scr.onreadytstatechange = scr.onload = function(){gotGreek.boot();};}else{gotGreek.boot();}}run();void(0);'>GotGreek?</a> is a bookmarklet that provides 
+			instant translation to and from any language that Google Translate supports.
+		<div>
+	</body>
+</html>
