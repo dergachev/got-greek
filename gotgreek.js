@@ -32,10 +32,8 @@ var gotGreek = function(){
 				loaded: !config.usePowerTip || ((typeof rangy !== 'undefined')?(typeof rangy.modules.CssClassApplier !== undefined):false)
 			}
 		},
-		currentJob = {
-			text: '', translation: '', range: null, x:0, y:0
-		},
-		loaded=false,running=false,initialized=false, cache, cssApplier;
+		loaded=false, running=false, initialized=false, 
+		currentRange, cache, cssApplier;
 	// loads all external libraries 
 	var load = function(){	
 		yepnope([{
@@ -87,7 +85,7 @@ var gotGreek = function(){
 		config.target = (navigator.language.substring(0,2) || navigator.userLanguage.substring(0,2) || 'en').toLowerCase();
 		cache={};
 		rangy.init();
-		currentJob.range= null;
+		currentRange= null;
 		if (config.usePowerTip){
 			cssApplier = rangy.createCssClassApplier('gotGreek-selected',{normalize:true});
 		}
@@ -96,10 +94,11 @@ var gotGreek = function(){
 	};
 	var translateListener= function(event){
 		// remove all existing tooltips
+		var text, x, y;
 		if(config.usePowerTip){
 			jQuery('#powerTip').remove();
-			if (currentJob.range !== null){
-				cssApplier.undoToRange(currentJob.range);
+			if (currentRange !== null){
+				cssApplier.undoToRange(currentRange);
 			}
 		}else{
 			console.log(jQuery('#gotGreek-box'));
@@ -108,52 +107,57 @@ var gotGreek = function(){
 		if(event.button!==0 || !running){return;}
 		// if there is no selection try to wrap a word around click point
 		if (rangy.getSelection().isCollapsed){
-			currentJob.range = extractWordAt(event.target, event.clientX, event.clientY);
+			currentRange = extractWordAt(event.target, event.clientX, event.clientY);
 		}
 		// if there is a selection, push it to its bounding limits
 		else{
-			currentJob.range = rangy.getSelection().getRangeAt(0);
-			pushToLimits(currentJob.range);
+			currentRange = rangy.getSelection().getRangeAt(0);
+			pushToLimits(currentRange);
 		}
-		if(currentJob.range===null){
+		if(currentRange===null){
 			rangy.getSelection().removeAllRanges();
 			return;
 		}
 		//TODO instead of toString, go through the range and jump over script tags
 		// if what you found is not garbage translate it
-		var tmp=currentJob.range.toString();
-		if (/\S/.test(tmp) && /\D/.test(tmp)){
-			currentJob.text = tmp.replace(/\s/g,' ');
-			currentJob.x = event.clientX;
-			currentJob.y = event.clientY;
+		text = currentRange.toString();
+		if (/\S/.test(text) && /\D/.test(text)){
+			text = text.replace(/\s/g,' ');
+			x= jQuery(document).scrollLeft()+event.clientX+10;
+			y= jQuery(document).scrollTop()+event.clientY+10;
 			if(config.usePowerTip){
-				cssApplier.applyToRange(currentJob.range);
+				cssApplier.applyToRange(currentRange);
 			}
-			rangy.getSelection().setSingleRange(currentJob.range);
-			if (cache[currentJob.text]){
-				currentJob.translation = cache[currentJob.text];
-				return showTooltip();
+			rangy.getSelection().setSingleRange(currentRange);
+			if (cache[text]){
+				return showTooltip(x, y, text, cache[text]);
 			}
 			//send request to Google
 			jQuery.ajax({
 				url: config.googleTranslateUrl,
 				type: 'GET',
 				dataType: 'jsonp',
-				success: gotGreek.jsonCallback,
+				success: jsonCallback(x,y,text),	
 				error: function(xhr, status){console.log(xhr);console.log(status);},
 				data: {
 					key: config.googleApiKey,
 					source: config.source,
 					target: config.target,
-					q: currentJob.text,
+					q: text,
 				}
 			});
 		}
 	};
-	var showTooltip= function(){
+	var jsonCallback = function(x, y, text){
+		return function (response){
+			cache[text]=response.data.translations[0].translatedText;
+			showTooltip(x, y, text, cache[text]);
+		};
+	};
+	var showTooltip= function(x, y, text, translation){
 		if(config.usePowerTip){
-			jQuery('.gotGreek-selected').data('powertip','<p><b>'+config.target+'</b>: '+currentJob.translation+
-									 '</p><hr><p><b>'+config.source+'</b>: '+currentJob.text+
+			jQuery('.gotGreek-selected').data('powertip','<p><b>'+config.target+'</b>: '+translation+
+									 '</p><hr><p><b>'+config.source+'</b>: '+text+
 									 '</p><img src="'+config.attributionUrl+'">');
 			jQuery('.gotGreek-selected').powerTip({placement:'se',smartPlacement:true,manual:true});
 			jQuery.powerTip.show(jQuery('.gotGreek-selected'));
@@ -161,10 +165,10 @@ var gotGreek = function(){
 			jQuery('body').append(
 						jQuery(document.createElement('div'))
 						.attr('id','gotGreek-box')
-						.html(	'<p><b>'+config.target+'</b>: '+currentJob.translation+'</p><hr><p><b>'+config.source+'</b>: '+currentJob.text+ 
-								'</p><img src="'+config.attributionUrl+ '">')
-						.css('top',(jQuery(document).scrollTop()+currentJob.y+10)+'px')
-						.css('left',(jQuery(document).scrollLeft()+currentJob.x+10)+'px'));
+						.html('<p><b>'+config.target+'</b>: '+translation+'</p><hr><p><b>'+config.source+'</b>: '+text+ 
+							  '</p><img src="'+config.attributionUrl+ '">')
+						.css('top',y+'px')
+						.css('left',x+'px'));
 		}
 	};
 	// helper function for translateListener, pushes a range to its boundaries
@@ -255,8 +259,8 @@ var gotGreek = function(){
 				m.fadeOut(1000,function(){
 					if (config.usePowerTip){
 						jQuery('#powerTip').remove();
-						if(currentJob.range!== null) {
-							cssApplier.undoToRange(currentJob.range);
+						if(currentRange!== null) {
+							cssApplier.undoToRange(currentRange);
 						}
 					}else{
 						jQuery('#gotGreek-box').remove();
@@ -264,11 +268,6 @@ var gotGreek = function(){
 					m.remove();
 				});
 			}
-		},
-		jsonCallback : function(response){
-			currentJob.translation = response.data.translations[0].translatedText;
-			cache[currentJob.text]=currentJob.translation;
-			showTooltip();
 		}
 	};
 }();
