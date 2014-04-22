@@ -2,40 +2,32 @@ var gotGreek = function(){
 	var	config = {
 			boundaryPattern:/[\s:!.,\"\(\)«»%$]/,
 			nonBoundaryPattern:/[^\s:!.,\"\(\)«»%$]/,
-			attributionUrl:'https://s3.amazonaws.com/gotgreek/google.png',
 			googleApiKey:'AIzaSyAICISSmAHfsclKJ4eu5UtbhhtWMLUqxcY',
 			googleTranslateUrl:'https://www.googleapis.com/language/translate/v2',
 			source: '',
 			target: '',
-			usePowerTip: false,
-		},
-		//external resources that GotGreek has to load
-		resources= {
-			jQuery: {
-				url: '//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js',
-				loaded: (typeof jQuery !== 'undefined')
-			},
-			powerTip: {
-				url: '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/jquery.powertip.min.js',
-				loaded: !config.usePowerTip || ((typeof jQuery !== 'undefined')?(typeof jQuery.fn.powerTip !== 'undefined'):false)
-			},
-			powerTipCss: {
-				url: '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/css/jquery.powertip.min.css',
-				loaded: !config.usePowerTip || ((typeof jQuery !== 'undefined')?(typeof jQuery.fn.powerTip !== 'undefined'):false)
-			},
-			rangyCore: {
-				url: '//rangy.googlecode.com/svn/trunk/dev/rangy-core.js',
-				loaded: (typeof rangy !== 'undefined')
-			},
-			rangyCssApplier: {
-				url: '//rangy.googlecode.com/svn/trunk/dev/rangy-cssclassapplier.js',
-				loaded: !config.usePowerTip || ((typeof rangy !== 'undefined')?(typeof rangy.modules.CssClassApplier !== undefined):false)
-			}
-		},
-		currentJob = {
-			text: '', translation: '', range: null, x:0, y:0
-		},
-		loaded=false,running=false,initialized=false, cache, cssApplier;
+  };
+
+  //external resources that GotGreek has to load
+  var resources= {
+    jQuery: {
+      url: '//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js',
+      loaded: (typeof jQuery !== 'undefined')
+    },
+    rangyCore: {
+      url: '//rangy.googlecode.com/svn/trunk/dev/rangy-core.js',
+      loaded: (typeof rangy !== 'undefined')
+    }
+  };
+  var currentJob = {
+    text: '', translation: '', range: null, x:0, y:0
+  };
+
+  var loaded = false;
+  var running = false;
+  var initialized = false;
+  var cache, cssApplier;
+
 	// loads all external libraries 
 	var load = function(){	
 		yepnope([{
@@ -43,16 +35,8 @@ var gotGreek = function(){
 			nope: resources.jQuery.url,
 			callback: yepnopeCallback
 		},{
-			test: resources.powerTip.loaded,
-			nope: [resources.powerTip.url,resources.powerTipCss.url],
-			callback: yepnopeCallback
-		},{
 			test: resources.rangyCore.loaded,
 			nope: resources.rangyCore.url,
-			callback: yepnopeCallback
-		},{
-			test: resources.rangyCssApplier.loaded,
-			nope: resources.rangyCssApplier.url,
 			callback: yepnopeCallback
 		}]);
 	};
@@ -85,43 +69,59 @@ var gotGreek = function(){
 		//TODO handle the case where html lang is set to an ISO 639-1 non-compliant value
 		config.source = (jQuery('html').attr('lang') || jQuery('html').attr('xml:lang') || 'fr').toLowerCase().substring(0,2);
 		config.target = (navigator.language || navigator.userLanguage || 'en').toLowerCase().substring(0,2);
+    if (config.source == config.target) {
+      config.source = 'fr';
+    }
 		cache={};
 		rangy.init();
 		currentJob.range= null;
-		if (config.usePowerTip){
-			cssApplier = rangy.createCssClassApplier('gotGreek-selected',{normalize:true});
-		}
 		initialized = true;
 		gotGreek.boot();
 	};
-	var translateListener= function(event){
-		if(event.button!==0 || !running){return;}
-		// if there is no selection try to wrap a word around click point
-		if (rangy.getSelection().isCollapsed){
-			currentJob.range = extractWordAt(event.target, event.clientX, event.clientY);
+
+	var translateListener = function(event){
+
+    // only pay attention to left-clicks
+		if (event.button!==0 || !running) {
+      return;
+    }
+
+    // no text is selected
+    if (rangy.getSelection().isCollapsed){
+      if (event.altKey && event.target.nodeName == 'A') {
+        // manually select alt-clicked link's text; see http://stackoverflow.com/a/14295222/9621
+        currentJob.range = rangy.createRange();
+        currentJob.range.selectNodeContents(event.target);
+        var sel = rangy.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(currentJob.range);
+
+      }
+      else {
+        return;
+      }
 		}
 		// if there is a selection, push it to its bounding limits
 		else{
 			currentJob.range = rangy.getSelection().getRangeAt(0);
 			pushToLimits(currentJob.range);
 		}
+
 		if(currentJob.range===null){
 			rangy.getSelection().removeAllRanges();
 			return;
 		}
+
 		//TODO instead of toString, go through the range and jump over script tags
 		// if what you found is not garbage translate it
 		var tmp=currentJob.range.toString();
-		if (/\S/.test(tmp) && /\D/.test(tmp)){
+		if (typeof tmp !== 'undefined' && /\S/.test(tmp) && /\D/.test(tmp)){
 			currentJob.text = tmp;
 			currentJob.x = event.clientX;
 			currentJob.y = event.clientY;
-			if(config.usePowerTip){
-				cssApplier.applyToRange(currentJob.range);
-			}
 			rangy.getSelection().setSingleRange(currentJob.range);
 			if (cache[currentJob.text]){
-				currentJob.translation = cache[text];
+				currentJob.translation = cache[currentJob.text];
 				return showTooltip();
 			}
 			//send request to Google
@@ -140,23 +140,17 @@ var gotGreek = function(){
 			});
 		}
 	};
+
 	var showTooltip= function(){
-		if(config.usePowerTip){
-			jQuery('.gotGreek-selected').data('powertip','<p><b>en</b>: '+currentJob.translation+
-									 '</p><hr><p><b>fr</b>: '+currentJob.text+
-									 '</p><img src="'+config.attributionUrl+'">');
-			jQuery('.gotGreek-selected').powerTip({placement:'se',smartPlacement:true,manual:true});
-			jQuery.powerTip.show(jQuery('.gotGreek-selected'));
-		}else{
-			jQuery('body').append(
-						jQuery(document.createElement('div'))
-						.attr('id','gotGreek-box')
-						.html(	'<p><b>en</b>: '+currentJob.translation+'</p><hr><p><b>fr</b>: '+currentJob.text+ 
-								'</p><img src="'+config.attributionUrl+ '">')
-						.css('top',(jQuery(document).scrollTop()+currentJob.y+10)+'px')
-						.css('left',(jQuery(document).scrollLeft()+currentJob.x+10)+'px'));
-		}
+    jQuery('body').append(
+          jQuery(document.createElement('div'))
+          .attr('id','gotGreek-box')
+          .addClass('gotGreek-box')
+          .html('<p class="translation">'+currentJob.translation+'</p><hr><p class="text">'+currentJob.text+'</p>')
+          .css('top',(jQuery(document).scrollTop()+currentJob.y+10)+'px')
+          .css('left',(jQuery(document).scrollLeft()+currentJob.x+10)+'px'));
 	};
+
 	// helper function for translateListener, pushes a range to its boundaries
 	var pushToLimits= function(range){
 		var startNodeValue = range.startContainer.nodeValue,
@@ -173,56 +167,7 @@ var gotGreek = function(){
 		range.setEnd(range.endContainer,end);
 		return range;
 	};
-	// helper function for translateListener, recursively traverses the DOM in search of the word that contains (x,y) 
-	var extractWordAt = function(node,x,y){
-		var range,
-			currentText = node.nodeValue,
-			start, end, counter, tmp, len;
-		if (node.nodeType === node.TEXT_NODE && /\S/.test(currentText)){
-			// if node is a text node, start digging the word out: slide the range (start,end) along node.nodeValue until
-			// the corresponding range contains (x,y) the sliding window (start,end) jumps over non bounding characters.
-			start =0;
-			while (start< currentText.length){
-				range = rangy.createRange();
-				
-				tmp =currentText.substring(start).search(config.nonBoundaryPattern);
-				if(tmp === -1) {break;}
-				start += tmp;
-				range.setStart(node,start);
-				
-				tmp = currentText.substring(start).search(config.boundaryPattern);
-				if (tmp === -1){
-					end = currentText.length;
-				}else{
-					end = start + tmp;
-				}
-				range.setEnd(node,end);
-				if (boxContainsPoint(range.nativeRange.getBoundingClientRect(),x,y)){
-					//found the word
-					rangy.getSelection().setSingleRange(range);
-					return range;
-				}
-				start = end;
-				range.detach();
-			}
-		}
-		// if node is an element, go through its children
-		else if (node.nodeType === node.ELEMENT_NODE){
-			// if (x,y) falls outside of containing rectangle of the node, don't bother.
-			if (!boxContainsPoint(node.getBoundingClientRect(), x, y)){ return null; }
-			for (counter = 0, len= node.childNodes.length; counter < len ; counter++){
-				tmp = extractWordAt(node.childNodes[counter],x,y);
-				if (tmp && /\S/.test(tmp.toString())){ return tmp; }
-			}
-		}
-		return null;
-	};	
-	var boxContainsPoint = function(box, x, y){
-		if (box.bottom > y && box.top < y && box.left< x && box.right > x){
-			return true;
-		}
-		return false;
-	};
+
 	/*
 	 * the public interface of gotGreek:
 	*/
@@ -234,18 +179,30 @@ var gotGreek = function(){
 			}else if(!initialized){
 				init();
 			}else if(!running){
-				jQuery('body').mouseup(translateListener);
-				jQuery('body').mousedown(function(){
-					if(config.usePowerTip){
-						jQuery('#powerTip').remove();
-					}else{
-						jQuery('#gotGreek-box').remove();
-					}
-					if(config.usePowerTip && currentJob.range!==null){
-						cssApplier.undoToRange(currentJob.range);
-					}
-				});
 				running = true;
+
+        // support alt-clicking on links to translate them
+        jQuery('a').click(function(event){
+          if (event.altKey) {
+            // holding ALT while clicking on a link will prevent navigation
+            event.preventDefault();
+            // but it's still desirable to clear the previous selection
+            rangy.getSelection().removeAllRanges();
+          }
+        });
+
+        // clear result box on any click (mousedown)
+				jQuery('body').mousedown(function(){
+          jQuery('.gotGreek-box').remove();
+				});
+
+        // display translation of selection (mouseup)
+				jQuery('body').mouseup(function(event){
+          // Due to race condition triggered by re-clicking on existing selection,
+          // we need to add a tiny timeout; see https://code.google.com/p/rangy/issues/detail?id=175
+          window.setTimeout(function(){translateListener(event)}, 10);
+        });
+
 			}else if(running){
 				var m = jQuery(document.createElement('div')).attr('id','gotGreek-menu').text('GotGreek is Stopping...');
 				
@@ -253,14 +210,7 @@ var gotGreek = function(){
 				jQuery('body').unbind('mouseup',translateListener);
 				running = false;
 				m.fadeOut(1000,function(){
-						if (config.usePowerTip){
-						jQuery('#powerTip').remove();
-						if(currentJob.range!== null) {
-							cssApplier.undoToRange(currentJob.range);
-						}
-					}else{
-						jQuery('#gotGreek-box').remove();
-					}
+          jQuery('.gotGreek-box').remove();
 					m.remove();
 				});
 			}
