@@ -3,21 +3,18 @@
 TITLE=$1
 URL_PREFIX=$2
 
+# config.source = (jQuery('html').attr('lang') || jQuery('html').attr('xml:lang') || 'fr').toLowerCase().substring(0,2);
+# if (config.source == config.target) {
+#   config.source = 'fr';
+# }
+
 bookmarklet_code(){
 cat - <<EOT
+var gotGreekSource = 'fr';
+var gotGreekTarget = 'en';
+
 function run(){
-	if (document.getElementById('gotgreekcss')===null){
-		var style = document.createElement('link');
-		style.id='gotgreekcss';
-		style.type ='text/css';
-		style.rel='stylesheet';
-		style.href='$URL_PREFIX/style.css';
-		document.head.appendChild(style);
-		var m = document.createElement('div');
-		m.setAttribute('id','gotGreek-menu');
-		m.appendChild(document.createTextNode('GotGreek is Loading ...'));
-		document.body.appendChild(m);
-	}
+
 	if(typeof yepnope === 'undefined'){
 		var yepnopeScript = document.createElement('script');
 		yepnopeScript.type='text/javascript';
@@ -35,10 +32,13 @@ function loadGotGreek(){
 	});
 }
 function runGotGreek(){
-	console.log(typeof gotGreek);
-	gotGreek.boot();
+  var source = 'fr';
+  var target = (navigator.language || navigator.userLanguage || 'en').toLowerCase().substring(0,2);
+  gotGreek.setLanguage(source, target);
+  gotGreek.boot();
 }
-run();void(0);
+run();
+void(0);
 EOT
 }
 
@@ -56,6 +56,9 @@ cat <<EOT
         font-family:'Roboto Slab'; 
         line-height:1.5;
         color:#1b2d37;
+      }
+      input {
+        font-size: 22px;
       }
       #content{
         font-size:22px;
@@ -79,7 +82,7 @@ cat <<EOT
 		<div id='content'>
 			<div class='intro'>
         <a href="javascript:$CODE">$TITLE ⚑</a> is a bookmarklet that provides 
-        instant translation to and from any language that Google Translate supports.
+        instant translation from <input type="text" name="source" value="fr" id="select-source"/> to <input type="text" name="target" value="en" id="select-target" /> using any language codes that Google Translate supports.
       </div>
 
       <p>

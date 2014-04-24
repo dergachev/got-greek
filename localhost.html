@@ -10,6 +10,9 @@
         line-height:1.5;
         color:#1b2d37;
       }
+      input {
+        font-size: 22px;
+      }
       #content{
         font-size:22px;
         width:40%;
@@ -31,8 +34,8 @@
 	<body>
 		<div id='content'>
 			<div class='intro'>
-        <a href="javascript:function run(){  if (document.getElementById('gotgreekcss')===null){   var style = document.createElement('link');   style.id='gotgreekcss';   style.type ='text/css';   style.rel='stylesheet';   style.href='http://localhost:7000/assets/style.css';   document.head.appendChild(style);   var m = document.createElement('div');   m.setAttribute('id','gotGreek-menu');   m.appendChild(document.createTextNode('GotGreek is Loading ...'));   document.body.appendChild(m);  }  if(typeof yepnope === 'undefined'){   var yepnopeScript = document.createElement('script');   yepnopeScript.type='text/javascript';   yepnopeScript.src='//cdnjs.cloudflare.com/ajax/libs/yepnope/1.5.4/yepnope.min.js';   yepnopeScript.onreadystatechange = yepnopeScript.onload = loadGotGreek;   document.head.appendChild(yepnopeScript);  }else{   loadGotGreek();  } } function loadGotGreek(){  yepnope({     load: 'http://localhost:7000/assets/gotgreek.js',   callback: runGotGreek  }); } function runGotGreek(){  console.log(typeof gotGreek);  gotGreek.boot(); } run();void(0); ">GG7000 ⚑</a> is a bookmarklet that provides 
-        instant translation to and from any language that Google Translate supports.
+        <a href="javascript:var gotGreekSource = 'fr'; var gotGreekTarget = 'en';  function run(){   if(typeof yepnope === 'undefined'){   var yepnopeScript = document.createElement('script');   yepnopeScript.type='text/javascript';   yepnopeScript.src='//cdnjs.cloudflare.com/ajax/libs/yepnope/1.5.4/yepnope.min.js';   yepnopeScript.onreadystatechange = yepnopeScript.onload = loadGotGreek;   document.head.appendChild(yepnopeScript);  }else{   loadGotGreek();  } } function loadGotGreek(){  yepnope({     load: 'http://localhost:7000/assets/gotgreek.js',   callback: runGotGreek  }); } function runGotGreek(){   var source = 'fr';   var target = (navigator.language || navigator.userLanguage || 'en').toLowerCase().substring(0,2);   gotGreek.setLanguage(source, target);   gotGreek.boot(); } run(); void(0); ">GG7000 ⚑</a> is a bookmarklet that provides 
+        instant translation from <input type="text" name="source" value="fr" id="select-source"/> to <input type="text" name="target" value="en" id="select-target" /> using any language codes that Google Translate supports.
       </div>
 
       <p>
