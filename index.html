@@ -10,6 +10,9 @@
         line-height:1.5;
         color:#1b2d37;
       }
+      select {
+        font-size: 22px;
+      }
       #content{
         font-size:22px;
         width:40%;
@@ -26,14 +29,158 @@
         color:inherit;
       }
     </style>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+    <script src="/markleteer.js"></script>
+    <script type='text/javascript'>
+      function populateOptions(selectBox) {
+        var languages = {
+          'en': 'English',
+          'fr': 'French',
+          'es': 'Spanish',
+          'af': 'Afrikaans',
+          'sq': 'Albanian',
+          'ar': 'Arabic',
+          'hy': 'Armenian',
+          'az': 'Azerbaijani',
+          'eu': 'Basque',
+          'be': 'Belarusian',
+          'bn': 'Bengali',
+          'bs': 'Bosnian',
+          'bg': 'Bulgarian',
+          'ca': 'Catalan',
+          'ceb': 'Cebuano',
+          'zh-CN': 'Chinese',
+          'hr': 'Croatian',
+          'cs': 'Czech',
+          'da': 'Danish',
+          'nl': 'Dutch',
+          'eo': 'Esperanto',
+          'et': 'Estonian',
+          'tl': 'Filipino',
+          'fi': 'Finnish',
+          'gl': 'Galician',
+          'ka': 'Georgian',
+          'de': 'German',
+          'el': 'Greek',
+          'gu': 'Gujarati',
+          'ht': 'Haitian Creole',
+          'ha': 'Hausa',
+          'iw': 'Hebrew',
+          'hi': 'Hindi',
+          'hmn': 'Hmong',
+          'hu': 'Hungarian',
+          'is': 'Icelandic',
+          'ig': 'Igbo',
+          'id': 'Indonesian',
+          'ga': 'Irish',
+          'it': 'Italian',
+          'ja': 'Japanese',
+          'jw': 'Javanese',
+          'kn': 'Kannada',
+          'km': 'Khmer',
+          'ko': 'Korean',
+          'lo': 'Lao',
+          'la': 'Latin',
+          'lv': 'Latvian',
+          'lt': 'Lithuanian',
+          'mk': 'Macedonian',
+          'ms': 'Malay',
+          'mt': 'Maltese',
+          'mi': 'Maori',
+          'mr': 'Marathi',
+          'mn': 'Mongolian',
+          'ne': 'Nepali',
+          'no': 'Norwegian',
+          'fa': 'Persian',
+          'pl': 'Polish',
+          'pt': 'Portuguese',
+          'pa': 'Punjabi',
+          'ro': 'Romanian',
+          'ru': 'Russian',
+          'sr': 'Serbian',
+          'sk': 'Slovak',
+          'sl': 'Slovenian',
+          'so': 'Somali',
+          'sw': 'Swahili',
+          'sv': 'Swedish',
+          'ta': 'Tamil',
+          'te': 'Telugu',
+          'th': 'Thai',
+          'tr': 'Turkish',
+          'uk': 'Ukrainian',
+          'ur': 'Urdu',
+          'vi': 'Vietnamese',
+          'cy': 'Welsh',
+          'yi': 'Yiddish',
+          'yo': 'Yoruba',
+          'zu': 'Zulu'
+        };
+
+        for (var langCode in languages) {
+          var opt = $('<option />').val(langCode).text(languages[langCode]); 
+          selectBox.append(opt);
+        }
+      }
+    
+      jQuery(function($){
+        populateOptions($('#gotGreekSource'));
+        populateOptions($('#gotGreekTarget'));
+
+        // default to French as the source, cause that's what I want
+        $('#gotGreekSource').val('fr');
+
+        // set the absolute URL to gotgreek.js
+        $('#gotGreekUrlPrefix').val(window.location.href.replace(/\/[^\/]*$/, '') + "/assets");
+
+        // default to the browser language as the target
+        var targetDefaultLanguage = (navigator.language || navigator.userLanguage || 'en').toLowerCase().substring(0,2);
+        $('#gotGreekTarget').val(targetDefaultLanguage);
+        $('textarea.bookmarklet').markleteer( { titleCallback: function(){
+          var selectedSource = $('#gotGreekSource').val().toUpperCase();
+          var selectedTarget = $('#gotGreekTarget').val().toUpperCase();
+          return "GotGreek " + selectedSource + "⚑" + selectedTarget;
+        }});
+      });
+    </script>
+
 	</head>
 
 	<body>
 		<div id='content'>
 			<div class='intro'>
-        <a href="javascript:function run(){  if (document.getElementById('gotgreekcss')===null){   var style = document.createElement('link');   style.id='gotgreekcss';   style.type ='text/css';   style.rel='stylesheet';   style.href='http://dergachev.github.io/got-greek/assets/style.css';   document.head.appendChild(style);   var m = document.createElement('div');   m.setAttribute('id','gotGreek-menu');   m.appendChild(document.createTextNode('GotGreek is Loading ...'));   document.body.appendChild(m);  }  if(typeof yepnope === 'undefined'){   var yepnopeScript = document.createElement('script');   yepnopeScript.type='text/javascript';   yepnopeScript.src='//cdnjs.cloudflare.com/ajax/libs/yepnope/1.5.4/yepnope.min.js';   yepnopeScript.onreadystatechange = yepnopeScript.onload = loadGotGreek;   document.head.appendChild(yepnopeScript);  }else{   loadGotGreek();  } } function loadGotGreek(){  yepnope({     load: 'http://dergachev.github.io/got-greek/assets/gotgreek.js',   callback: runGotGreek  }); } function runGotGreek(){  console.log(typeof gotGreek);  gotGreek.boot(); } run();void(0); ">GG ⚑</a> is a bookmarklet that provides 
-        instant translation to and from any language that Google Translate supports.
+        <a class="bookmarkletLink" data-related-bookmarklet="gotGreek" href="">$TITLE ⚑</a> is a bookmarklet 
+        that translates any text you select from
+        <select name="gotGreekSource" id="gotGreekSource" class="bookmarkletSetting" data-related-bookmarklet="gotGreek"></select>
+        to <select name="gotGreekTarget" id="gotGreekTarget" class="bookmarkletSetting" data-related-bookmarklet="gotGreek"></select>.
       </div>
+
+      <input type='hidden' name='gotGreekUrlPrefix' id="gotGreekUrlPrefix" class="bookmarkletSetting" data-related-bookmarklet="gotGreek" value=""/>
+      <textarea title="GotGreek" id="gotGreek" class="bookmarklet" name="gotGreek">
+        function run(){
+
+          if(typeof yepnope === 'undefined'){
+            var yepnopeScript = document.createElement('script');
+            yepnopeScript.type='text/javascript';
+            yepnopeScript.src='//cdnjs.cloudflare.com/ajax/libs/yepnope/1.5.4/yepnope.min.js';
+            yepnopeScript.onreadystatechange = yepnopeScript.onload = loadGotGreek;
+            document.head.appendChild(yepnopeScript);
+          }else{
+            loadGotGreek();
+          }
+        }
+        function loadGotGreek(){
+          yepnope({
+            load: gotGreekUrlPrefix + '/gotgreek.js',
+            callback: runGotGreek
+          });
+        }
+        function runGotGreek(){
+          gotGreek.setLanguage(gotGreekSource, gotGreekTarget);
+          gotGreek.boot();
+        }
+        run();
+        void(0);
+      </textarea>
 
       <p>
       Dans le port d'Amsterdam <br />

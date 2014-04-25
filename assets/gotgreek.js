@@ -184,7 +184,7 @@ var gotGreek = function(){
               'background-color': '#000000',
               'color': ' #e3ce63', /* yellow */
               'position': 'absolute',
-              'font-size': '12px',
+              'font-size': '14px',
               'padding': ' 10px',
               'min-width': '10em',
               'max-width': '30em',
