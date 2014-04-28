@@ -157,7 +157,6 @@
       <input type='hidden' name='gotGreekUrlPrefix' id="gotGreekUrlPrefix" class="bookmarkletSetting" data-related-bookmarklet="gotGreek" value=""/>
       <textarea title="GotGreek" id="gotGreek" class="bookmarklet" name="gotGreek">
         function run(){
-
           if(typeof yepnope === 'undefined'){
             var yepnopeScript = document.createElement('script');
             yepnopeScript.type='text/javascript';
@@ -168,16 +167,20 @@
             loadGotGreek();
           }
         }
+
         function loadGotGreek(){
           yepnope({
-            load: gotGreekUrlPrefix + '/gotgreek.js',
-            callback: runGotGreek
+            load: [
+              '//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js',
+              '//rangy.googlecode.com/svn/trunk/dev/rangy-core.js',
+              gotGreekUrlPrefix + '/gotgreek.js'
+            ],
+            complete: function() {
+              gotGreek.boot(gotGreekSource, gotGreekTarget);
+            }
           });
         }
-        function runGotGreek(){
-          gotGreek.setLanguage(gotGreekSource, gotGreekTarget);
-          gotGreek.boot();
-        }
+
         run();
         void(0);
       </textarea>

@@ -16,52 +16,6 @@ var gotGreek = function(){
 
   var cache = {};
 
-	// loads all external libraries
-	var load = function(finishedCallback){
-    //external resources that GotGreek has to load
-    var resources= {
-      jQuery: {
-        url: '//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js',
-        loaded: (typeof jQuery !== 'undefined')
-      },
-      rangyCore: {
-        url: '//rangy.googlecode.com/svn/trunk/dev/rangy-core.js',
-        loaded: (typeof rangy !== 'undefined')
-      }
-    };
-
-    // checks if all necessary resources are loaded, if so removes the overlay meny and calls boot
-    var terminateLoad= function(){
-      //TODO handle the case were some resources are unavailable
-      var check=true;
-      for (r in resources){
-        check = check && resources[r].loaded;
-      }
-      if (check){
-        finishedCallback();
-      }
-    };
-
-    var yepnopeCallback= function(url,key,result){
-      for (var r in resources){
-        if (resources[r].url === url){
-          resources[r].loaded = true;
-          return terminateLoad();
-        }
-      }
-    };
-
-		yepnope([{
-			test: resources.jQuery.loaded,
-			nope: resources.jQuery.url,
-			callback: yepnopeCallback
-		},{
-			test: resources.rangyCore.loaded,
-			nope: resources.rangyCore.url,
-			callback: yepnopeCallback
-		}]);
-	};
-
 	var init = function(){
 		rangy.init();
 
@@ -226,17 +180,12 @@ var gotGreek = function(){
 	/*
 	 * The public interface of gotGreek.
 	*/
-	return{
-    setLanguage: function(source, target) {
+	return {
+		boot: function(source, target){
       config.source = source;
       config.target = target;
-    },
-
-		boot: function(){
-      load(function(){
-        showMessage('Loading complete, select a phrase to translate it. Alt-click a link to translate its text.');
-				init();
-      });
+      showMessage('Loading complete, select a phrase to translate it. Alt-click a link to translate its text.');
+      init();
 		}
 	};
 }();
